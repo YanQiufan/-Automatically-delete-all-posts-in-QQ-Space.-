@@ -1,0 +1,80 @@
+var delay = 1000; // 延迟时间
+
+// 通用查找函数：先查找主文档，再遍历所有 iframe
+function findElement(selector) {
+    let el = document.querySelector(selector);
+    if (el) {
+        return el;
+    }
+    let frames = document.querySelectorAll("iframe");
+    for (let frame of frames) {
+        try {
+            let doc = frame.contentDocument || frame.contentWindow.document;
+            el = doc.querySelector(selector);
+            if (el) {
+                return el;
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+    return null;
+}
+
+function del() {
+    let delBtn = findElement('.del_btn');
+    if (delBtn) {
+        delBtn.click();
+        setTimeout(yes, delay);
+        return;
+    }
+    // 找不到删除按钮时尝试翻页
+    nextPage();
+}
+
+function yes() {
+    let yesBtn = findElement('.qz_dialog_layer_btn');
+    if (yesBtn) {
+        yesBtn.click();
+        setTimeout(del, delay);
+        return;
+    }
+    // 如果未找到确认按钮，则延迟后再次尝试（等待弹窗加载）
+    setTimeout(yes, delay);
+}
+
+function nextPage() {
+    let nextBtns = document.querySelectorAll('[id^="pager_next_"]'); // 选取所有 id 以 pager_next_ 开头的按钮
+    let nextBtn = null;
+    
+    if (nextBtns.length > 0) {
+        nextBtn = nextBtns[nextBtns.length - 1]; // 选择最后一个（通常是最新的）
+    }
+
+    if (!nextBtn) {
+        let frames = document.querySelectorAll("iframe");
+        for (let frame of frames) {
+            try {
+                let doc = frame.contentDocument || frame.contentWindow.document;
+                let frameNextBtns = doc.querySelectorAll('[id^="pager_next_"]');
+                if (frameNextBtns.length > 0) {
+                    nextBtn = frameNextBtns[frameNextBtns.length - 1]; // 选择最后一个
+                    break;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+    }
+
+    if (nextBtn) {
+        console.log("点击下一页...");
+        nextBtn.click();
+        setTimeout(del, delay * 2); // 延迟等待新页加载
+    } else {
+        console.log("没有找到下一页按钮，可能是最后一页。");
+    }
+}
+
+// 启动脚本
+del();
